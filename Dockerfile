@@ -23,7 +23,6 @@ RUN set -ex && \
     rpm -qa --qf "%{NAME}\n" > /tmp/dirty.txt && \
     curl https://anchorectl-releases.s3-us-west-2.amazonaws.com/v0.1.4/anchorectl_0.1.4_linux_amd64.tar.gz | tar xzvf - -C /usr/local/bin/ && \
     adduser -d /xmrig mining && \
-    pip3 install --index-url https://pypi.org/simple --no-cache-dir aiohttp==3.7.3 pytest urllib3 botocore six numpy && \
     gem install ftpd -v 0.2.1 && \
     npm install --cache /tmp/empty-cache xmldom@0.4.0 && \
     npm cache clean --force && \
