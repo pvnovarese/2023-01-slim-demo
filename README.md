@@ -1,6 +1,6 @@
 # 2022-06-enterprise-demo 
 
-[![Drift Detection Demo](https://github.com/pvnovarese/2022-06-enterprise-demo/actions/workflows/drift-demo-setup.yaml/badge.svg)](https://github.com/pvnovarese/2022-06-enterprise-demo/actions/workflows/drift-demo-setup.yaml)
+[![Anchore Weekly](https://github.com/pvnovarese/2022-06-enterprise-demo/actions/workflows/anchore-weekly.yaml/badge.svg)](https://github.com/pvnovarese/2022-06-enterprise-demo/actions/workflows/anchore-weekly.yaml) [![Drift Detection Demo](https://github.com/pvnovarese/2022-06-enterprise-demo/actions/workflows/drift-demo-setup.yaml/badge.svg)](https://github.com/pvnovarese/2022-06-enterprise-demo/actions/workflows/drift-demo-setup.yaml)
 
 Simple demo for Anchore Enterprise, including both Jenkins and GitHub workflow examples.
 
