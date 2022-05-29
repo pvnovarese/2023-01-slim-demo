@@ -24,9 +24,8 @@ RUN set -ex && \
     gem install ftpd -v 0.2.1 && \
     npm install --cache /tmp/empty-cache xmldom@0.4.0 && \
     npm cache clean --force && \
-    dnf -y autoremove && \
-    dnf -y clean all && \
-    rm -rf /var/cache/yum /tmp /spring-cloud-function-3.1.6
+    microdnf -y clean all && \
+    rm -rf /var/cache/yum /tmp 
 
 ## if using the actual rpm rather than the hints file, you need these:
 ##    yum -y install /sudo-1.8.29-5.el8.x86_64.rpm && \
