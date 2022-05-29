@@ -73,6 +73,12 @@ pipeline {
         //   anchore-cli --url ${ANCHORE_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} evaluate check ${REPOSITORY}:${TAG1}
         // """
         //
+        // if you want continuous re-evaluation in the background, you can turn it on with these:
+        //   anchore-cli subscription activate policy_eval ${REPOSITORY}:${TAG1}
+        //   anchore-cli subscription activate vuln_update ${REPOSITORY}:${TAG1}
+        // and in this case you would probably also want to configure "policy & vulnerability" updates
+        // in "Events & Notifications" -> "Manage Notification Endpoints" 
+        //
       } // end steps
     } // end stage "analyze image 1 with anchore plugin"     
     
