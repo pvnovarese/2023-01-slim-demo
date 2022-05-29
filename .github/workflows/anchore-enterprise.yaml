@@ -55,12 +55,12 @@ jobs:
     - name: Add to Enterprise Queue
       run: | 
         anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        # if you can't install anchore-cli in your runner you can use the docker image like this:
         # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL --mount type=bind,src=${PWD}/Dockerfile,dst=/Dockerfile anchore/engine-cli anchore-cli image add --noautosubscribe --dockerfile /Dockerfile ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
     - name: Wait for Enterprise Analysis
       run: |
         anchore-cli image wait ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
-        # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL anchore/engine-cli anchore-cli image wait ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
-
+        
 
   Evaluate:
     needs: Scan-Analyze
@@ -81,13 +81,11 @@ jobs:
     - name: Pull Vulnerability List
       run: |
         anchore-cli image vuln ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} all | tee anchore-vuln.txt
-        # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL anchore/engine-cli anchore-cli image vuln ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} all | tee anchore-vuln.txt
     - name: Pull Policy Evaluation
       run: |
         set -o pipefail
         # we have to set pipefail so that we can still gate on the evaluation, otherwise piping into tee will mask the failure
         anchore-cli evaluate check --detail ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} | tee anchore-policy.txt
-        # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL anchore/engine-cli anchore-cli evaluate check --detail ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} | tee anchore-policy.txt
     - name: Archive Vulnerabilities and Evaluation
       if: always()
       uses: actions/upload-artifact@v2
@@ -122,6 +120,9 @@ jobs:
       run: |
         anchore-cli image add --noautosubscribe ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
         anchore-cli image wait ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
-        # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL anchore/engine-cli anchore-cli image add --noautosubscribe ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
-        # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL anchore/engine-cli anchore-cli image wait ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+    - name: Activate Policy and Vulnerability Subscriptions
+      run: |
+        anchore-cli subscription activate policy_eval ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli subscription activate vuln_update ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+
 
