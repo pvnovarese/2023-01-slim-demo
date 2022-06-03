@@ -8,7 +8,8 @@ pipeline {
     CREDENTIAL = "docker-hub"
     DOCKER_HUB = credentials("$CREDENTIAL")
     REPOSITORY = "${DOCKER_HUB_USR}/${JOB_BASE_NAME}"
-    TAG = "build-${BUILD_NUMBER}"
+    //TAG = "build-${BUILD_NUMBER}"
+    TAG = "${BRANCH_NAME}"
     IMAGELINE = "${REPOSITORY}:${TAG} Dockerfile"
     BRANCH_NAME = "${GIT_BRANCH.split("/")[1]}"
     //
