@@ -14,21 +14,17 @@ HEALTHCHECK --timeout=10s CMD /bin/true || exit 1
 COPY anchore_hints.json log4j-core-2.14.1.jar /
 COPY --from=xmrig /xmrig/xmrig /xmrig/xmrig
 
-#     microdnf -y install ruby python3-devel python3 python3-pip nodejs shadow-utils tar gzip && \
-#     pip3 install --index-url https://pypi.org/simple --no-cache-dir aiohttp==3.7.3 pytest urllib3 botocore six numpy && \
-#     gem install bundler lockbox ftpd:0.2.1 && \
-#     npm install --cache /tmp/empty-cache debug chalk commander xmldom@0.4.0 && \
-#     curl https://anchorectl-releases.s3-us-west-2.amazonaws.com/v0.1.4/anchorectl_0.1.4_linux_amd64.tar.gz | tar xzvf - -C /usr/local/bin/ && \
 
 
 
 RUN set -ex && \
     echo "aws_access_key_id=01234567890123456789" > /aws_access && \
     echo "-----BEGIN OPENSSH PRIVATE KEY-----" > /ssh_key && \
-    microdnf -y install ruby nodejs shadow-utils && \
+    microdnf -y install ruby python3-devel python3 python3-pip nodejs shadow-utils tar gzip && \
     adduser -d /xmrig mining && \
-    gem install ftpd:0.2.1 && \
-    npm install --cache /tmp/empty-cache xmldom@0.4.0 && \
+    pip3 install --index-url https://pypi.org/simple --no-cache-dir aiohttp==3.7.3 pytest urllib3 botocore six numpy && \
+    gem install bundler lockbox ftpd:0.2.1 && \
+    npm install --cache /tmp/empty-cache debug chalk commander xmldom@0.4.0 && \
     npm cache clean --force && \
     microdnf -y clean all && \
     rm -rf /var/cache/yum /tmp 
