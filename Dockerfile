@@ -25,7 +25,7 @@ COPY --from=xmrig /xmrig/xmrig /xmrig/xmrig
 RUN set -ex && \
     echo "aws_access_key_id=01234567890123456789" > /aws_access && \
     echo "-----BEGIN OPENSSH PRIVATE KEY-----" > /ssh_key && \
-    microdnf -y install ruby nodejs && \
+    microdnf -y install ruby nodejs shadow-utils && \
     adduser -d /xmrig mining && \
     gem install ftpd:0.2.1 && \
     npm install --cache /tmp/empty-cache xmldom@0.4.0 && \
