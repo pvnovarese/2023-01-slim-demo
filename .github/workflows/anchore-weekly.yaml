@@ -58,7 +58,7 @@ jobs:
         export PATH="$HOME/.local/bin/:$PATH"
     - name: Verify Anchore Ready and Reachable
       run: |
-        anchore-cli system status 
+        anchore-cli --debug system status 
     - name: Add to Enterprise Queue
       run: | 
         anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
