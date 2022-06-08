@@ -10,25 +10,28 @@ on:
     inputs:
       mode:
         description: 'Manual Build'  
+
+env:
+  ANCHORE_CLI_USER: ${{ secrets.ANCHORE_CLI_USER }}
+  ANCHORE_CLI_PASS: ${{ secrets.ANCHORE_CLI_PASS }}
+  ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
+  IMAGE_REGISTRY: ghcr.io
+
 jobs:
 
   Build-Push:
     runs-on: ubuntu-latest
-    env:
-      ANCHORE_CLI_USER: ${{ secrets.ANCHORE_CLI_USER }}
-      ANCHORE_CLI_PASS: ${{ secrets.ANCHORE_CLI_PASS }}
-      ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v2
-    - name: Login to ghcr.io
-      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+    - name: Login to Image Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${IMAGE_REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
     - name: Build Baseline Docker Image
       run: |
-        docker build . --file .drift-demo/Dockerfile-baseline --tag ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        docker build . --file .drift-demo/Dockerfile-baseline --tag ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Push Baseline Docker Image
       run: |
-        docker push ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        docker push ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Install anchore-cli
       run: |
         sudo apt-get install python3-pip
@@ -39,27 +42,27 @@ jobs:
         anchore-cli system status 
     - name: Add Baseline Image to Enterprise Queue
       run: | 
-        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Build Drifted Docker Image
       run: |
-        docker build . --file Dockerfile --tag ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        docker build . --file Dockerfile --tag ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Push Drifted Docker Image
       run: |
-        docker push ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        docker push ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Wait for Baseline Image Analysis
       run: |
-        anchore-cli image wait ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
         # I check this after the build/push of the drifted image just to save time, otherwise
         # we would just block while baseline scans even though we could be doing other stuff
     - name: Add Drifted Image to Enterprise Queue
       run: | 
-        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Wait for Drifted Image Analysis
       run: |
-        anchore-cli image wait ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Activate Policy and Vulnerability Subscriptions
       run: |
-        anchore-cli subscription activate policy_eval ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
-        anchore-cli subscription activate vuln_update ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli subscription activate policy_eval ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli subscription activate vuln_update ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
 
 

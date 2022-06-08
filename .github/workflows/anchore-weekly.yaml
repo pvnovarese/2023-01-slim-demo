@@ -7,8 +7,8 @@ on:
   #push:
   #  branches:
   #    - main
-  #schedule:
-  #  - cron: '52 23 * * 5'
+  schedule:
+    - cron: '52 23 * * 5'
   workflow_dispatch:
     inputs:
       mode:
@@ -18,6 +18,8 @@ env:
   ANCHORE_CLI_USER: ${{ secrets.ANCHORE_CLI_USER }}
   ANCHORE_CLI_PASS: ${{ secrets.ANCHORE_CLI_PASS }}
   ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
+  IMAGE_REGISTRY: ghcr.io
+
   
 jobs:
 
@@ -26,14 +28,14 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v2
-    - name: Login to ghcr.io
-      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+    - name: Login to Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${IMAGE_REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
     - name: Build Docker Image
       run: |
-        docker build . --file Dockerfile --tag ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        docker build . --file Dockerfile --tag ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Push Docker Image
       run: |
-        docker push ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        docker push ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Archive Dockerfile
       uses: actions/upload-artifact@v2
       with:
@@ -56,15 +58,15 @@ jobs:
         export PATH="$HOME/.local/bin/:$PATH"
     - name: Verify Anchore Ready and Reachable
       run: |
-        anchore-cli system status 
+        anchore-cli --debug system status 
     - name: Add to Enterprise Queue
       run: | 
-        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Wait for Enterprise Analysis
       run: |
-        anchore-cli image wait ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
     - name: Activate Policy and Vulnerability Subscriptions
       run: |
-        anchore-cli subscription activate policy_eval ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
-        anchore-cli subscription activate vuln_update ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli subscription activate policy_eval ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli subscription activate vuln_update ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
 
