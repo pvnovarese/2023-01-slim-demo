@@ -13,6 +13,14 @@ on:
     inputs:
       mode:
         description: 'Manual Build'  
+        
+env:
+  ANCHORE_CLI_USER: ${{ secrets.ANCHORE_CLI_USER }}
+  ANCHORE_CLI_PASS: ${{ secrets.ANCHORE_CLI_PASS }}
+  ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_TAG: production
+        
 jobs:
 
   Build-Push:
@@ -21,13 +29,13 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v2
     - name: Login to ghcr.io
-      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${IMAGE_REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
     - name: Build Docker Image
       run: |
-        docker build . --file Dockerfile --tag ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        docker build . --file Dockerfile --tag ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
     - name: Push Docker Image
       run: |
-        docker push ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        docker push ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
     - name: Archive Dockerfile
       uses: actions/upload-artifact@v2
       with:
@@ -38,10 +46,6 @@ jobs:
   Scan-Analyze:
     needs: Build-Push
     runs-on: ubuntu-latest
-    env:
-      ANCHORE_CLI_USER: ${{ secrets.ANCHORE_CLI_USER }}
-      ANCHORE_CLI_PASS: ${{ secrets.ANCHORE_CLI_PASS }}
-      ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
     steps:
     - name: Download Dockerfile Artifact 
       uses: actions/download-artifact@v2
@@ -54,21 +58,17 @@ jobs:
         export PATH="$HOME/.local/bin/:$PATH"
     - name: Add to Enterprise Queue
       run: | 
-        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
         # if you can't install anchore-cli in your runner you can use the docker image like this:
-        # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL --mount type=bind,src=${PWD}/Dockerfile,dst=/Dockerfile anchore/engine-cli anchore-cli image add --noautosubscribe --dockerfile /Dockerfile ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL --mount type=bind,src=${PWD}/Dockerfile,dst=/Dockerfile anchore/engine-cli anchore-cli image add --noautosubscribe --dockerfile /Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
     - name: Wait for Enterprise Analysis
       run: |
-        anchore-cli image wait ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
         
 
   Evaluate:
     needs: Scan-Analyze
     runs-on: ubuntu-latest
-    env:
-      ANCHORE_CLI_USER: ${{ secrets.ANCHORE_CLI_USER }}
-      ANCHORE_CLI_PASS: ${{ secrets.ANCHORE_CLI_PASS }}
-      ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
     steps:
     - name: Install anchore-cli
       run: |
@@ -80,12 +80,12 @@ jobs:
         anchore-cli system status 
     - name: Pull Vulnerability List
       run: |
-        anchore-cli image vuln ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} all | tee anchore-vuln.txt
+        anchore-cli image vuln ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} all | tee anchore-vuln.txt
     - name: Pull Policy Evaluation
       run: |
         set -o pipefail
         # we have to set pipefail so that we can still gate on the evaluation, otherwise piping into tee will mask the failure
-        anchore-cli evaluate check --detail ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} | tee anchore-policy.txt
+        anchore-cli evaluate check --detail ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} | tee anchore-policy.txt
     - name: Archive Vulnerabilities and Evaluation
       if: always()
       uses: actions/upload-artifact@v2
@@ -97,20 +97,16 @@ jobs:
   Promote-Deploy:
     needs: Evaluate
     runs-on: ubuntu-latest
-    env:
-      ANCHORE_CLI_USER: ${{ secrets.ANCHORE_CLI_USER }}
-      ANCHORE_CLI_PASS: ${{ secrets.ANCHORE_CLI_PASS }}
-      ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
     steps:
     - name: Login to ghcr.io
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
     - name: Re-Tag Image
       run: |
-        docker pull ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
-        docker tag ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        docker pull ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        docker tag ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
     - name: Push Docker Image
       run: |
-        docker push ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        docker push ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
     - name: Install anchore-cli
       run: |
         sudo apt-get install python3-pip
@@ -118,11 +114,11 @@ jobs:
         export PATH="$HOME/.local/bin/:$PATH"
     - name: Add Promoted Image to Anchore Queue
       run: |
-        anchore-cli image add --noautosubscribe ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
-        anchore-cli image wait ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli image add --noautosubscribe ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
+        anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
     - name: Activate Policy and Vulnerability Subscriptions
       run: |
-        anchore-cli subscription activate policy_eval ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
-        anchore-cli subscription activate vuln_update ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli subscription activate policy_eval ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
+        anchore-cli subscription activate vuln_update ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
 
 
