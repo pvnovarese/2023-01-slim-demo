@@ -60,9 +60,10 @@ jobs:
     - name: Wait for Drifted Image Analysis
       run: |
         anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
-    - name: Activate Policy and Vulnerability Subscriptions
+    - name: Activate Policy and Vulnerability Subscriptions plus Alerts
       run: |
         anchore-cli subscription activate policy_eval ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
         anchore-cli subscription activate vuln_update ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli subscription activate alerts ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
 
 
