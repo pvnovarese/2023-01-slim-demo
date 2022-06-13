@@ -54,7 +54,7 @@ jobs:
 
     - name: Tag Docker Image
       run: |
-        docker -D tag localbuild/testimage:latest ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        docker -D tag localbuild/testimage:latest ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
 
     - name: Login to Registry
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${IMAGE_REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
