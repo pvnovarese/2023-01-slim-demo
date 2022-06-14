@@ -22,7 +22,7 @@ RUN set -ex && \
     curl https://anchorectl-releases.s3-us-west-2.amazonaws.com/v0.2.0/anchorectl_0.2.0_linux_amd64.tar.gz | tar xzvf - -C /usr/local/bin/ && \
     adduser -d /xmrig mining && \
     pip3 install --index-url https://pypi.org/simple --no-cache-dir aiohttp==3.7.3 pytest urllib3 botocore six numpy && \
-    gem install bundler ftpd:0.2.1 && \
+    gem install bundler lockbox:0.6.8 ftpd:0.2.1 && \
     npm install --cache /tmp/empty-cache debug chalk commander xmldom@0.4.0 && \
     npm cache clean --force && \
     microdnf -y clean all && \
