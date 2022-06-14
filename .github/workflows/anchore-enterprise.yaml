@@ -58,9 +58,9 @@ jobs:
         export PATH="$HOME/.local/bin/:$PATH"
     - name: Add to Enterprise Queue
       run: | 
-        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} --annotation actor=${GITHUB_ACTOR}
         # if you can't install anchore-cli in your runner you can use the docker image like this:
-        # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL --mount type=bind,src=${PWD}/Dockerfile,dst=/Dockerfile anchore/engine-cli anchore-cli image add --noautosubscribe --dockerfile /Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
+        # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL --mount type=bind,src=${PWD}/Dockerfile,dst=/Dockerfile anchore/engine-cli anchore-cli image add --noautosubscribe --dockerfile /Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} --annotation actor=${GITHUB_ACTOR}
     - name: Wait for Enterprise Analysis
       run: |
         anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}
@@ -114,7 +114,7 @@ jobs:
         export PATH="$HOME/.local/bin/:$PATH"
     - name: Add Promoted Image to Anchore Queue
       run: |
-        anchore-cli image add --noautosubscribe ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
+        anchore-cli image add --noautosubscribe ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG} --annotation actor=${GITHUB_ACTOR}
         anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
     - name: Activate Policy and Vulnerability Subscriptions
       run: |
