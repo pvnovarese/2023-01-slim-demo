@@ -42,7 +42,7 @@ jobs:
         anchore-cli system status 
     - name: Add Baseline Image to Enterprise Queue
       run: | 
-        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME} --annotation build=baseline --annotation actor=${GITHUB_ACTOR}
     - name: Build Drifted Docker Image
       run: |
         docker build . --file Dockerfile --tag ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
@@ -56,7 +56,7 @@ jobs:
         # we would just block while baseline scans even though we could be doing other stuff
     - name: Add Drifted Image to Enterprise Queue
       run: | 
-        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
+        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME} --annotation build=drifted --annotation actor=${GITHUB_ACTOR}
     - name: Wait for Drifted Image Analysis
       run: |
         anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}
