@@ -20,8 +20,7 @@ env:
   ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
   IMAGE_REGISTRY: ghcr.io
   IMAGE_TAG: weekly
-  IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.GITHUB_REPOSITORY }}:${{ env.IMAGE_TAG }}
-
+  IMAGE: ghcr.io/${{ env.GITHUB_REPOSITORY }}:weekly
   
 jobs:
 
