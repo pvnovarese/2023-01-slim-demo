@@ -20,6 +20,7 @@ env:
   ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
   IMAGE_REGISTRY: ghcr.io
   IMAGE_TAG: weekly
+  IMAGE: ${{ env.IMAGE_REGISTRY }}/${{ env.GITHUB_REPOSITORY }}:${{ env.IMAGE_TAG }}
 
   
 jobs:
@@ -37,13 +38,13 @@ jobs:
     - name: Build Local Container
       run: |
         #docker build . --file Dockerfile --tag localbuild/testimage:latest
-        docker build . --file Dockerfile --tag ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
+        docker build . --file Dockerfile --tag ${IMAGE}
 
     - name: Scan Image
       uses: anchore/scan-action@v3
       id: scan
       with:
-        image: ${{ env.IMAGE_REGISTRY }}/${{ env.GITHUB_REPOSITORY,, }}:${{ env.IMAGE_TAG }}
+        image: ${{ env.IMAGE }}
         fail-build: false
         severity-cutoff: critical
         acs-report-enable: true
