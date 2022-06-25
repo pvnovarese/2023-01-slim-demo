@@ -40,9 +40,8 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
-    - name: Build Local Container
+    - name: Build Image
       run: |
-        #docker build . --file Dockerfile --tag localbuild/testimage:latest
         docker build . --file Dockerfile --tag ${IMAGE}
 
     - name: Scan Image
@@ -59,16 +58,11 @@ jobs:
       with:
         sarif_file: ${{ steps.scan.outputs.sarif }}
 
-#     - name: Tag Docker Image
-#       run: |
-#         docker -D tag localbuild/testimage:latest ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
-
     - name: Login to Registry
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${IMAGE_REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
 
     - name: Push Docker Image
       run: |
-        #docker push ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
         docker push ${IMAGE}
         
     - name: Archive Dockerfile
@@ -83,6 +77,11 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    
+    - name: "Set environmental variables"
+      run: |
+        echo "IMAGE=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY}:${IMAGE_TAG}" >> $GITHUB_ENV
+    
     - name: Download Dockerfile Artifact 
       uses: actions/download-artifact@v2
       with:
@@ -100,14 +99,14 @@ jobs:
         
     - name: Add to Enterprise Queue
       run: | 
-        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG} --annotation actor=${GITHUB_ACTOR}
+        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE} --annotation actor=${GITHUB_ACTOR}
         
     - name: Wait for Enterprise Analysis
       run: |
-        anchore-cli image wait ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
+        anchore-cli image wait ${IMAGE}
         
     - name: Activate Policy and Vulnerability Subscriptions
       run: |
-        anchore-cli subscription activate policy_eval ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
-        anchore-cli subscription activate vuln_update ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
+        anchore-cli subscription activate policy_eval ${IMAGE}
+        anchore-cli subscription activate vuln_update ${IMAGE}
 
