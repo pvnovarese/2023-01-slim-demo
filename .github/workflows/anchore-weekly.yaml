@@ -20,11 +20,13 @@ env:
   ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
   IMAGE_REGISTRY: ghcr.io
   IMAGE_TAG: weekly
-  IMAGE: ghcr.io/${{ env.GITHUB_REPOSITORY }}:weekly
+  
   
 jobs:
 
   Build-Push:
+    env:
+      IMAGE: ghcr.io/${{ env.GITHUB_REPOSITORY }}:weekly
     runs-on: ubuntu-latest
     
     steps:
@@ -62,7 +64,8 @@ jobs:
 
     - name: Push Docker Image
       run: |
-        docker push ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
+        #docker push ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
+        docker push ${IMAGE}
         
     - name: Archive Dockerfile
       uses: actions/upload-artifact@v2
