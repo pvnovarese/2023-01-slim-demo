@@ -36,13 +36,14 @@ jobs:
 
     - name: Build Local Container
       run: |
-        docker build . --file Dockerfile --tag localbuild/testimage:latest
+        #docker build . --file Dockerfile --tag localbuild/testimage:latest
+        docker build . --file Dockerfile --tag ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
 
     - name: Scan Image
       uses: anchore/scan-action@v3
       id: scan
       with:
-        image: localbuild/testimage:latest
+        image: ${{ env.IMAGE_REGISTRY }}/${{ env.GITHUB_REPOSITORY,, }}:${{ env.IMAGE_TAG }}
         fail-build: false
         severity-cutoff: critical
         acs-report-enable: true
@@ -52,9 +53,9 @@ jobs:
       with:
         sarif_file: ${{ steps.scan.outputs.sarif }}
 
-    - name: Tag Docker Image
-      run: |
-        docker -D tag localbuild/testimage:latest ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
+#     - name: Tag Docker Image
+#       run: |
+#         docker -D tag localbuild/testimage:latest ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}
 
     - name: Login to Registry
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${IMAGE_REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
