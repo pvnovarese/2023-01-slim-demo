@@ -1,0 +1,33 @@
+version: 2
+jobs:
+  build:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: Build and push Docker image
+          command: |
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker build -t $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest .
+            docker push $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest  
+  scan:
+    docker:
+      - image: anchore/engine-cli:latest
+    steps:
+      - run:
+          name: Anchore Scan
+          command: |
+            echo "Adding image to Anchore Engine"
+            anchore-cli image add $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest
+            echo "Waiting for image analysis to complete"
+            anchore-cli image wait $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest
+            echo "Analysis complete"
+            if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then anchore-cli evaluate check $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest  ; fi
+workflows:
+  version: 2
+  build_scan_push:
+    jobs:
+      - build
+      - scan:
+          requires:
+            - build
