@@ -2,6 +2,8 @@ version: 2
 jobs:
   build:
     machine: true
+    environment: 
+      IMAGE:
     steps:
       - checkout
       - run:
@@ -18,18 +20,19 @@ jobs:
           name: Anchore Scan
           command: |
             echo "Adding image to Anchore Engine"
-            anchore-cli image add $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest
+            anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest --annotation actor=${CIRCLE_USERNAME}
             echo "Waiting for image analysis to complete"
             anchore-cli image wait $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest
             echo "Analysis complete"
             if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then anchore-cli evaluate check $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest  ; fi
+
 workflows:
   version: 2
-  build_scan_push:
+  build_scan:
     jobs:
       - build:
          context:
-           - anchore
+           - anchore  # in the "anchore" context, I've defined ANCHORE_CLI_URL, ANCHORE_CLI_USER, ANCHORE_CLI_PASS, ANCHORE_FAIL_ON_POLICY, DOCKER_USERNAME, and DOCKER_PASSWORD
       - scan:
           context:
            - anchore
