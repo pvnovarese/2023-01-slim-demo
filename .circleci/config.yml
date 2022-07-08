@@ -36,11 +36,19 @@ workflows:
   build_scan:
     jobs:
       - build:
-         context:
-           - anchore  # in the "anchore" context, I've defined ANCHORE_CLI_URL, ANCHORE_CLI_USER, ANCHORE_CLI_PASS, ANCHORE_FAIL_ON_POLICY, DOCKER_USERNAME, and DOCKER_PASSWORD
-      - scan:
+          filters:
+            branches:
+              only:
+                - main
           context:
-           - anchore
+            - anchore  # in the "anchore" context, I've defined ANCHORE_CLI_URL, ANCHORE_CLI_USER, ANCHORE_CLI_PASS, ANCHORE_FAIL_ON_POLICY, DOCKER_USERNAME, and DOCKER_PASSWORD
+      - scan:
+          filters:
+            branches:
+              only:
+                - main
+          context:
+            - anchore
           requires:
             - build
   weekly:
