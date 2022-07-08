@@ -16,6 +16,7 @@ jobs:
     docker:
       - image: anchore/engine-cli:latest
     steps:
+      - checkout
       - run:
           name: Anchore Scan
           command: |
