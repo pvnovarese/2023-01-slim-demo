@@ -1,0 +1,71 @@
+version: 2
+jobs:
+  build:
+    machine: true
+    environment: 
+      IMAGE:
+    steps:
+      - checkout
+      - run:
+          name: Build and push Docker image
+          command: |
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker build -t $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest .
+            docker push $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest  
+  scan:
+    docker:
+      - image: anchore/engine-cli:latest
+    steps:
+      - checkout
+      - run:
+          name: Anchore Scan
+          command: |
+            echo "pwd"
+            pwd
+            echo "list of files"
+            ls -l
+            echo "Adding image to Anchore Engine"
+            anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest --annotation actor=${CIRCLE_USERNAME}
+            echo "Waiting for image analysis to complete"
+            anchore-cli image wait $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest
+            echo "Analysis complete"
+            if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then anchore-cli evaluate check $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest  ; fi
+
+workflows:
+  version: 2
+  build_scan:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only:
+                - main
+          context:
+            - anchore  # in the "anchore" context, I've defined ANCHORE_CLI_URL, ANCHORE_CLI_USER, ANCHORE_CLI_PASS, ANCHORE_FAIL_ON_POLICY, DOCKER_USERNAME, and DOCKER_PASSWORD
+      - scan:
+          filters:
+            branches:
+              only:
+                - main
+          context:
+            - anchore
+          requires:
+            - build
+  weekly:
+    triggers: #use the triggers key to indicate a scheduled build
+      - schedule:
+          cron: "0 18 * * 2" # tuesday at 18:00
+          filters:
+            branches:
+              only:
+                - main
+    jobs:
+      - build:
+         context:
+           - anchore  # in the "anchore" context, I've defined ANCHORE_CLI_URL, ANCHORE_CLI_USER, ANCHORE_CLI_PASS, ANCHORE_FAIL_ON_POLICY, DOCKER_USERNAME, and DOCKER_PASSWORD
+      - scan:
+          context:
+           - anchore
+          requires:
+            - build
+
