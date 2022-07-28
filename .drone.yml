@@ -42,7 +42,7 @@ steps:
         from_secret: hub_password
     commands:
       - docker login -u $$DRONE_REPO_NAMESPACE -p $PASSWORD
-      - docker tag $DRONE_REPO:$DRONE_BUILD_NUMBER $DRONE_REPO:drone-prod
+      - docker tag $DRONE_REPO:drone-$DRONE_BUILD_NUMBER $DRONE_REPO:drone-prod
       - docker push $DRONE_REPO:drone-prod
     volumes:
       - name: docker_sock
