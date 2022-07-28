@@ -44,7 +44,7 @@ steps:
       - docker login -u $$DRONE_REPO_NAMESPACE -p $PASSWORD
       - docker tag $DRONE_REPO:drone-$DRONE_BUILD_NUMBER $DRONE_REPO:drone-prod
       - docker push $DRONE_REPO:drone-prod
-      docker run --rm -e ANCHORE_CLI_URL=$ANCHORE_CLI_URL -e ANCHORE_CLI_USER=$ANCHORE_CLI_USER -e ANCHORE_CLI_PASS=$ANCHORE_CLI_PASS anchore/engine-cli sh -c "anchore-cli image add --noautosubscribe $DRONE_REPO:drone-prod --annotation build_tool=drone"
+      - docker run --rm -e ANCHORE_CLI_URL=$ANCHORE_CLI_URL -e ANCHORE_CLI_USER=$ANCHORE_CLI_USER -e ANCHORE_CLI_PASS=$ANCHORE_CLI_PASS anchore/engine-cli sh -c "anchore-cli image add --noautosubscribe $DRONE_REPO:drone-prod --annotation build_tool=drone"
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
