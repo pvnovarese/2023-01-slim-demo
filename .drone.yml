@@ -15,9 +15,9 @@ steps:
       PASSWORD:
         from_secret: hub_password
     commands:
-      - docker build -t $DRONE_REPO:$DRONE_BUILD_NUMBER .
+      - docker build -t $DRONE_REPO:drone-$DRONE_BUILD_NUMBER .
       - docker login -u $$DRONE_REPO_NAMESPACE -p $PASSWORD
-      - docker push $DRONE_REPO:$DRONE_BUILD_NUMBER
+      - docker push $DRONE_REPO:drone-$DRONE_BUILD_NUMBER
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
@@ -31,7 +31,7 @@ steps:
       ANCHORE_CLI_URL:
         from_secret: anchore_cli_url
     commands:
-      - docker run --rm -e ANCHORE_CLI_URL=$ANCHORE_CLI_URL -e ANCHORE_CLI_USER=$ANCHORE_CLI_USER -e ANCHORE_CLI_PASS=$ANCHORE_CLI_PASS anchore/engine-cli sh -c "anchore-cli image add --noautosubscribe $DRONE_REPO:$DRONE_BUILD_NUMBER --annotation build_tool=drone && anchore-cli image wait $DRONE_REPO:$DRONE_BUILD_NUMBER && anchore-cli evaluate check $DRONE_REPO:$DRONE_BUILD_NUMBER"
+      - docker run --rm -e ANCHORE_CLI_URL=$ANCHORE_CLI_URL -e ANCHORE_CLI_USER=$ANCHORE_CLI_USER -e ANCHORE_CLI_PASS=$ANCHORE_CLI_PASS anchore/engine-cli sh -c "anchore-cli image add --noautosubscribe $DRONE_REPO:drone-$DRONE_BUILD_NUMBER --annotation build_tool=drone && anchore-cli image wait $DRONE_REPO:drone-$DRONE_BUILD_NUMBER && anchore-cli evaluate check $DRONE_REPO:drone-$DRONE_BUILD_NUMBER"
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
@@ -42,15 +42,15 @@ steps:
         from_secret: hub_password
     commands:
       - docker login -u $$DRONE_REPO_NAMESPACE -p $PASSWORD
-      - docker tag $DRONE_REPO:$DRONE_BUILD_NUMBER $DRONE_REPO:prod
-      - docker push $DRONE_REPO:prod
+      - docker tag $DRONE_REPO:$DRONE_BUILD_NUMBER $DRONE_REPO:drone-prod
+      - docker push $DRONE_REPO:drone-prod
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
   - name: Cleanup
     image: docker
     commands:
-      - docker image rm $DRONE_REPO:$DRONE_BUILD_NUMBER
+      - docker image rm $DRONE_REPO:drone-$DRONE_BUILD_NUMBER $DRONE_REPO:drone-prod
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
