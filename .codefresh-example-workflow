@@ -1,0 +1,66 @@
+# More examples of Codefresh YAML can be found at
+# https://codefresh.io/docs/docs/yaml-examples/examples/
+version: "1.0"
+# Stages can help you organize your steps in stages
+stages:
+  - "build"
+  - "test"
+  - "promote"
+
+steps:
+  clone:
+    title: "Cloning Repository"
+    type: "git-clone"
+    repo: "${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"
+    # CF_BRANCH value is auto set when pipeline is triggered
+    # Learn more at codefresh.io/docs/docs/codefresh-yaml/variables/
+    revision: "${{CF_BRANCH}}"
+    git: "github"
+    stage: "build"
+
+  build:
+    title: "Building Docker Image"
+    type: "build"
+    image_name: "${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"
+    working_directory: "${{clone}}"
+    tag: "cf-${{CF_SHORT_REVISION}}"
+    dockerfile: "Dockerfile"
+    stage: "build"
+
+  test:
+    title: "Scan with Anchore Enterprise"
+    #image: quay.io/codefreshplugins/anchore-plugin:latest 
+    image: docker.io/pvnovarese/anchore-tools:latest
+    environment:
+      - ANCHORE_CLI_IMAGE=${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}:cf-${{CF_SHORT_REVISION}}
+     # uncomment the following line if you want to break the pipeline for policy violation
+     # - ANCHORE_FAIL_ON_POLICY=true
+    commands:
+      #- /entrypoint.sh # only use this with the anchore-plugin image
+      - anchore-cli image add --noautosubscribe ${ANCHORE_CLI_IMAGE} --annotation build_tool=codefresh
+      - anchore-cli image wait ${ANCHORE_CLI_IMAGE}
+      # uncomment next command to gate on policy eval
+      # - anchore-cli evaluate check ${ANCHORE_CLI_IMAGE}
+    stage: "test"
+
+  promote:
+    title: "Rebuild and Promote Docker Image"
+    type: "build"
+    image_name: "${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"
+    working_directory: "${{clone}}"
+    tag: "cf-${{CF_BRANCH}}"
+    dockerfile: "Dockerfile"
+    stage: "promote"
+
+  queue:
+    title: "Add Promoted Image to Anchore Queue"
+    #image: quay.io/codefreshplugins/anchore-plugin:latest 
+    image: docker.io/pvnovarese/anchore-tools:latest
+    environment:
+      - ANCHORE_CLI_IMAGE=docker.io/${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}:cf-${{CF_BRANCH}}
+    commands:
+      - anchore-cli image add --noautosubscribe ${ANCHORE_CLI_IMAGE} --annotation build_tool=codefresh
+      - anchore-cli image wait ${ANCHORE_CLI_IMAGE}
+      - anchore-cli subscription activate policy_eval ${ANCHORE_CLI_IMAGE}
+      - anchore-cli subscription activate vuln_update ${ANCHORE_CLI_IMAGE}
+    stage: "promote"
