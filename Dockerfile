@@ -14,7 +14,8 @@ COPY log4j-core-2.14.1.jar /
 RUN set -ex && \
     echo "aws_access_key_id=01234567890123456789" > /aws_access && \
     echo "-----BEGIN OPENSSH PRIVATE KEY-----" > /ssh_key && \
-    apk add --no-cache curl && \
+    apk add --no-cache curl ruby && \
+    gem install bundler lockbox:0.6.8 ftpd:0.2.1 && \
     curl https://anchorectl-releases.s3-us-west-2.amazonaws.com/v0.2.0/anchorectl_0.2.0_linux_amd64.tar.gz | tar xzvf - -C /usr/local/bin/ 
 
 ## just to make sure we have a unique build each time
