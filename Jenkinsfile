@@ -65,7 +65,7 @@ pipeline {
         // cleanup stage if the evaluation fails
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
           // forceAnalyze is a good idea since we're passing a Dockerfile with the image
-          anchore name: 'anchore_images', forceAnalyze: 'true', engineRetries: '900'
+          anchore name: 'anchore_images', forceAnalyze: 'true', engineRetries: '900', annotations: [[key: 'build_tool', value: 'jenkins']]
         }
         // if we want to use anchore-cli instead we can do this:
         // sh """
