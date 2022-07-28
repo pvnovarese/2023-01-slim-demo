@@ -37,6 +37,13 @@ steps:
         path: /var/run/docker.sock
   - name: Promote image
     image: docker
+    environment: 
+      ANCHORE_CLI_USER:
+        from_secret: anchore_cli_user
+      ANCHORE_CLI_PASS:
+        from_secret: anchore_cli_pass
+      ANCHORE_CLI_URL:
+        from_secret: anchore_cli_url
     environment:
       PASSWORD:
         from_secret: hub_password
