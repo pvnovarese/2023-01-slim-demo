@@ -31,6 +31,7 @@ RUN set -ex && \
 ## if using the actual rpm rather than the hints file, you need these:
 ##    yum -y install /sudo-1.8.29-5.el8.x86_64.rpm && \
 ##    rm -rf /sudo-1.8.29-5.el8.x86_64.rpm && \
+##
 
 ## just to make sure we have a unique build each time
 RUN date > /image_build_timestamp
