@@ -67,6 +67,6 @@ jobs:
       run: |
         anchore-cli subscription activate policy_eval ${IMAGE}
         anchore-cli subscription activate vuln_update ${IMAGE}
-        anchore-cli subscription activate alerts ${IMAGE}
+        #anchore-cli subscription activate alerts ${IMAGE}
 
 
