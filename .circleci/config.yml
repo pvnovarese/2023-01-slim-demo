@@ -21,7 +21,7 @@ jobs:
           name: Anchore Scan
           command: |
             echo "Adding image to Anchore Engine"
-            anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest --annotation actor=${CIRCLE_PROJECT_USERNAME}
+            anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest --annotation actor=${CIRCLE_PROJECT_USERNAME} --annotation build_tool=circleci
             echo "Waiting for image analysis to complete"
             anchore-cli image wait $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest
             echo "Analysis complete"
