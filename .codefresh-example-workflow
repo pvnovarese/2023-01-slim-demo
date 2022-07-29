@@ -23,7 +23,7 @@ steps:
     type: "build"
     image_name: "${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"
     working_directory: "${{clone}}"
-    tag: "cf-${{CF_SHORT_REVISION}}"
+    tag: "cf-dev"
     dockerfile: "Dockerfile"
     stage: "build"
 
@@ -32,12 +32,12 @@ steps:
     #image: quay.io/codefreshplugins/anchore-plugin:latest 
     image: docker.io/pvnovarese/anchore-tools:latest
     environment:
-      - ANCHORE_CLI_IMAGE=${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}:cf-${{CF_SHORT_REVISION}}
+      - ANCHORE_CLI_IMAGE=${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}:cf-dev
      # uncomment the following line if you want to break the pipeline for policy violation
      # - ANCHORE_FAIL_ON_POLICY=true
     commands:
       #- /entrypoint.sh # only use this with the anchore-plugin image
-      - anchore-cli image add --noautosubscribe ${ANCHORE_CLI_IMAGE} --annotation build_tool=codefresh
+      - anchore-cli image add --noautosubscribe ${ANCHORE_CLI_IMAGE} --annotation build_tool=codefresh --annotation build_id=${{CF_SHORT_REVISION}}
       - anchore-cli image wait ${ANCHORE_CLI_IMAGE}
       # uncomment next command to gate on policy eval
       # - anchore-cli evaluate check ${ANCHORE_CLI_IMAGE}
@@ -59,7 +59,7 @@ steps:
     environment:
       - ANCHORE_CLI_IMAGE=docker.io/${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}:cf-${{CF_BRANCH}}
     commands:
-      - anchore-cli image add --noautosubscribe ${ANCHORE_CLI_IMAGE} --annotation build_tool=codefresh
+      - anchore-cli image add --noautosubscribe ${ANCHORE_CLI_IMAGE}  --annotation build_tool=codefresh --annotation build_id=${{CF_SHORT_REVISION}}
       - anchore-cli image wait ${ANCHORE_CLI_IMAGE}
       - anchore-cli subscription activate policy_eval ${ANCHORE_CLI_IMAGE}
       - anchore-cli subscription activate vuln_update ${ANCHORE_CLI_IMAGE}
