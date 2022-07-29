@@ -17,9 +17,9 @@ steps:
       HUB_PASSWORD: 
         from_secret: hub_password
     commands:
-      - docker build --pull -t $DRONE_REPO:drone-$DRONE_BUILD_NUMBER .
+      - docker build --pull -t $DRONE_REPO:drone-dev .
       - docker login -u $HUB_USER -p $HUB_PASSWORD
-      - docker push $DRONE_REPO:drone-$DRONE_BUILD_NUMBER
+      - docker push $DRONE_REPO:drone-dev
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
@@ -33,7 +33,7 @@ steps:
       ANCHORE_CLI_URL:
         from_secret: anchore_cli_url
     commands:
-      - docker run --rm -e ANCHORE_CLI_URL=$ANCHORE_CLI_URL -e ANCHORE_CLI_USER=$ANCHORE_CLI_USER -e ANCHORE_CLI_PASS=$ANCHORE_CLI_PASS anchore/engine-cli sh -c "anchore-cli image add --noautosubscribe $DRONE_REPO:drone-$DRONE_BUILD_NUMBER --annotation build_tool=drone && anchore-cli image wait $DRONE_REPO:drone-$DRONE_BUILD_NUMBER && anchore-cli evaluate check $DRONE_REPO:drone-$DRONE_BUILD_NUMBER"
+      - docker run --rm -e ANCHORE_CLI_URL=$ANCHORE_CLI_URL -e ANCHORE_CLI_USER=$ANCHORE_CLI_USER -e ANCHORE_CLI_PASS=$ANCHORE_CLI_PASS anchore/engine-cli sh -c "anchore-cli image add --noautosubscribe $DRONE_REPO:drone-dev --annotation build_tool=drone --annotation build_number=$DRONE_BUILD_NUMBER && anchore-cli image wait $DRONE_REPO:drone-dev && anchore-cli evaluate check $DRONE_REPO:drone-dev"
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
@@ -52,9 +52,9 @@ steps:
         from_secret: hub_password
     commands:
       - docker login -u $HUB_USER -p $HUB_PASSWORD
-      - docker tag $DRONE_REPO:drone-$DRONE_BUILD_NUMBER $DRONE_REPO:drone-prod
+      - docker tag $DRONE_REPO:drone-dev $DRONE_REPO:drone-prod
       - docker push $DRONE_REPO:drone-prod
-      - docker run --rm -e ANCHORE_CLI_URL=$ANCHORE_CLI_URL -e ANCHORE_CLI_USER=$ANCHORE_CLI_USER -e ANCHORE_CLI_PASS=$ANCHORE_CLI_PASS anchore/engine-cli sh -c "anchore-cli image add --noautosubscribe $DRONE_REPO:drone-prod --annotation build_tool=drone"
+      - docker run --rm -e ANCHORE_CLI_URL=$ANCHORE_CLI_URL -e ANCHORE_CLI_USER=$ANCHORE_CLI_USER -e ANCHORE_CLI_PASS=$ANCHORE_CLI_PASS anchore/engine-cli sh -c "anchore-cli image add --noautosubscribe $DRONE_REPO:drone-prod --annotation build_tool=drone --annotation build_number=$DRONE_BUILD_NUMBER"
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
