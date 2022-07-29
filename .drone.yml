@@ -61,7 +61,7 @@ steps:
   - name: Cleanup
     image: docker
     commands:
-      - docker image rm $DRONE_REPO:drone-$DRONE_BUILD_NUMBER $DRONE_REPO:drone-prod
+      - docker image rm $DRONE_REPO:drone-dev $DRONE_REPO:drone-prod
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
