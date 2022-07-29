@@ -19,7 +19,6 @@ env:
   ANCHORE_CLI_PASS: ${{ secrets.ANCHORE_CLI_PASS }}
   ANCHORE_CLI_URL: ${{ secrets.ANCHORE_CLI_URL }}
   IMAGE_REGISTRY: ghcr.io
-  IMAGE_TAG: production
         
 jobs:
 
@@ -28,8 +27,8 @@ jobs:
     steps:
     - name: "Set environmental variables"
       run: |
-        echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}" >> $GITHUB_ENV
-        echo "IMAGE_PROD=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}" >> $GITHUB_ENV
+        echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:gh-dev" >> $GITHUB_ENV
+        echo "IMAGE_PROD=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:gh-prod" >> $GITHUB_ENV
     - name: Checkout Code
       uses: actions/checkout@v2
     - name: Login to ghcr.io
@@ -53,8 +52,8 @@ jobs:
     steps:
     - name: "Set environmental variables"
       run: |
-        echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}" >> $GITHUB_ENV
-        echo "IMAGE_PROD=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}" >> $GITHUB_ENV    
+        echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:gh-dev" >> $GITHUB_ENV
+        echo "IMAGE_PROD=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:gh-prod" >> $GITHUB_ENV    
     - name: Download Dockerfile Artifact 
       uses: actions/download-artifact@v2
       with:
@@ -66,7 +65,7 @@ jobs:
         export PATH="$HOME/.local/bin/:$PATH"
     - name: Add to Enterprise Queue
       run: | 
-        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_DEV} --annotation build_tool=github --annotation actor=${GITHUB_ACTOR}
+        anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile ${IMAGE_DEV} --annotation build_tool=github --annotation build_id=${GITHUB_SHA} --annotation actor=${GITHUB_ACTOR}
         # if you can't install anchore-cli in your runner you can use the docker image like this:
         # docker run -e ANCHORE_CLI_USER -e ANCHORE_CLI_PASS -e ANCHORE_CLI_URL --mount type=bind,src=${PWD}/Dockerfile,dst=/Dockerfile anchore/engine-cli anchore-cli image add --noautosubscribe --dockerfile /Dockerfile ${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA} --annotation actor=${GITHUB_ACTOR}
     - name: Wait for Enterprise Analysis
@@ -80,8 +79,8 @@ jobs:
     steps:
     - name: "Set environmental variables"
       run: |
-        echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}" >> $GITHUB_ENV
-        echo "IMAGE_PROD=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}" >> $GITHUB_ENV
+        echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:gh-dev" >> $GITHUB_ENV
+        echo "IMAGE_PROD=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:gh-prod" >> $GITHUB_ENV
     - name: Install anchore-cli
       run: |
         sudo apt-get install python3-pip
@@ -112,8 +111,8 @@ jobs:
     steps:
     - name: "Set environmental variables"
       run: |
-        echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}" >> $GITHUB_ENV
-        echo "IMAGE_PROD=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:${IMAGE_TAG}" >> $GITHUB_ENV    
+        echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:gh-dev" >> $GITHUB_ENV
+        echo "IMAGE_PROD=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY,,}:gh-prod" >> $GITHUB_ENV    
     - name: Login to ghcr.io
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
     - name: Re-Tag Image
@@ -122,7 +121,7 @@ jobs:
         docker tag ${IMAGE_DEV} ${IMAGE_PROD}
     - name: Push Docker Image
       run: |
-        docker push ${IIMAGE_PROD}
+        docker push ${IMAGE_PROD}
     - name: Install anchore-cli
       run: |
         sudo apt-get install python3-pip
@@ -130,7 +129,7 @@ jobs:
         export PATH="$HOME/.local/bin/:$PATH"
     - name: Add Promoted Image to Anchore Queue
       run: |
-        anchore-cli image add --noautosubscribe ${IMAGE_PROD} --annotation build_tool=github --annotation actor=${GITHUB_ACTOR}
+        anchore-cli image add --noautosubscribe ${IMAGE_PROD} --annotation build_tool=github --annotation buiid_id=${GITHUB_SHA} --annotation actor=${GITHUB_ACTOR}
         anchore-cli image wait ${IMAGE_PROD}
     - name: Activate Policy and Vulnerability Subscriptions
       run: |
