@@ -18,7 +18,7 @@ RUN set -ex && \
     gem install bundler lockbox:0.6.8 ftpd:0.2.1 && \
     curl https://anchorectl-releases.s3-us-west-2.amazonaws.com/v0.2.0/anchorectl_0.2.0_linux_amd64.tar.gz | tar xzvf - -C /usr/local/bin/ 
 
-## just to make sure we have a unique build each time ##
+## just to make sure we have a unique build each time 
 RUN date > /image_build_timestamp
 
 USER nobody
