@@ -46,7 +46,7 @@ jobs:
         
     - name: Verify Anchore Ready and Reachable
       run: |
-        anchorectl system wait
+        anchorectl system wait --timeout 10
         anchorectl system status
         
     - name: Generate SBOM and Push to Anchore
