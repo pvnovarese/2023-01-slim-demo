@@ -9,7 +9,7 @@ jobs:
       - run:
           name: Build and push Docker image
           command: |
-            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
             docker build -t $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest .
             docker push $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest  
   scan:
