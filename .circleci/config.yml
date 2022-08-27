@@ -18,6 +18,7 @@ jobs:
           command: |
             ### first set the IMAGE variable (can't set this globally if we want to construct it from other variables)
             echo 'export IMAGE=${DOCKER_USERNAME}/${CIRCLE_PROJECT_REPONAME}:circleci-latest' >> $BASH_ENV
+            source $BASH_ENV
             ### login to docker hub, change to whatever registry you're using
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
             ### build and push
@@ -33,6 +34,7 @@ jobs:
           name: Anchore Scan
           command: |
             echo 'export IMAGE=${DOCKER_USERNAME}/${CIRCLE_PROJECT_REPONAME}:circleci-latest' >> $BASH_ENV
+            source $BASH_ENV
             ### this sometimes helps for troubleshooting, comment out if you're having issues
             # anchorectl -v system status
             ### add image, wait for analysis.  I use --quiet to keep the logging info managable.  You can skip the --wait if you don't want the analysis
