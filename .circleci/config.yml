@@ -1,18 +1,28 @@
 version: 2
 jobs:
 
+  ### the following variables have been set in the "anchore" context
+  ### ANCHORECTL_USER
+  ### ANCHORECTL_PASSWORD
+  ### ANCHORECTL_URL
+  ### see anchorectl docs for more info 
+  ### https://docs.anchore.com/current/docs/using/anchorectl_usage/
+  ### https://docs.anchore.com/current/docs/deployment/anchorectl/
+
   build:
     machine: true
-    environment: 
-      IMAGE:
     steps:
       - checkout
       - run:
           name: Build and push Docker image
           command: |
+            ### first set the IMAGE variable (can't set this globally if we want to construct it from other variables)
+            echo 'export IMAGE="$DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest"' >> $BASH_ENV
+            ### login to docker hub, change to whatever registry you're using
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-            docker build -t $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest .
-            docker push $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest  
+            ### build and push
+            docker build --pull --no-cache -t $IMAGE .
+            docker push $IMAGE  
             
   scan:
     docker:
@@ -22,10 +32,13 @@ jobs:
       - run:
           name: Anchore Scan
           command: |
-            echo "Adding image to Anchore Enterprise"
-            anchorectl image add --force --no-auto-subscribe --wait --annotation build_tool=circleci --dockerfile ./Dockerfile $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest
-            echo "Analysis complete"
-            if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then anchorectl image check --detail --fail-based-on-results $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest ; else anchorectl image check --detail $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest ; fi
+            echo 'export IMAGE="$DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest"' >> $BASH_ENV
+            ### this sometimes helps for troubleshooting, comment out if you're having issues
+            # anchorectl -v system status
+            ### add image, wait for analysis.  I use --quiet to keep the logging info managable.  You can skip the --wait if you don't want the analysis
+            anchorectl --quiet image add --force --no-auto-subscribe --wait --annotation build_tool=circleci --dockerfile ./Dockerfile $IMAGE
+            ### pull policy evaluation details.  Set ANCHORE_FAIL_ON_POLICY if you want to break pipeline for a policy violation here.
+            if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then anchorectl image check --detail --fail-based-on-results $IMAGE ; else anchorectl image check --detail $IMAGE ; fi
 
 workflows:
   version: 2
