@@ -2,12 +2,19 @@ version: 2
 jobs:
 
   ### the following variables have been set in the "anchore" context
-  ### ANCHORECTL_USER
+  ###
+  ### ANCHORECTL_USERNAME
   ### ANCHORECTL_PASSWORD
   ### ANCHORECTL_URL
+  ### 
   ### see anchorectl docs for more info 
   ### https://docs.anchore.com/current/docs/using/anchorectl_usage/
   ### https://docs.anchore.com/current/docs/deployment/anchorectl/
+  ###
+  ### also in this context there is
+  ### ANCHORE_FAIL_ON_POLICY 
+  ### which is used to control whether to break pipeline if there
+  ### is a policy violation (see scan step below)
 
   build:
     machine: true
@@ -40,7 +47,11 @@ jobs:
             ### add image, wait for analysis.  I use --quiet to keep the logging info managable.  You can skip the --wait if you don't want the analysis
             anchorectl --quiet image add --force --no-auto-subscribe --wait --annotation build_tool=circleci --dockerfile ./Dockerfile $IMAGE
             ### pull policy evaluation details.  Set ANCHORE_FAIL_ON_POLICY if you want to break pipeline for a policy violation here.
-            if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then anchorectl image check --detail --fail-based-on-results $IMAGE ; else anchorectl image check --detail $IMAGE ; fi
+            if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then 
+              anchorectl image check --detail --fail-based-on-results $IMAGE ; 
+            else 
+              anchorectl image check --detail $IMAGE ; 
+            fi
 
 workflows:
   version: 2
