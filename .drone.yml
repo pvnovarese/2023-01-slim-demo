@@ -57,9 +57,17 @@ steps:
       ### add image to queue, pass actual dockerfile, then wait for results
       - anchorectl image add --force --no-auto-subscribe --wait --annotation build_tool=drone --dockerfile ./Dockerfile $${IMAGE}
       ### check evaluation but do NOT break the pipeline if the result is FAIL/STOP, just get the result:
-      - anchorectl image check --detail $${IMAGE}
+      #- anchorectl image check --detail $${IMAGE}
       ### check evaluation and break the pipeline if the result is FAIL/STOP:
       #- anchorectl image check --fail-based-on-results --detail $${IMAGE}
+      ### check evaluation and print detailed callouts.  
+      ### If ANCHORE_FAIL_ON_POLICY is set, break the pipeline if there is a policy violation
+      - |
+        if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then 
+          anchorectl image check --detail --fail-based-on-results $IMAGE ; 
+        else 
+          anchorectl image check --detail $IMAGE ; 
+        fi
     volumes:
       - name: docker_sock
         path: /var/run/docker.sock
