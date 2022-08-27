@@ -1,5 +1,6 @@
 version: 2
 jobs:
+
   build:
     machine: true
     environment: 
@@ -12,20 +13,19 @@ jobs:
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
             docker build -t $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest .
             docker push $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest  
+            
   scan:
     docker:
-      - image: anchore/engine-cli:latest
+      - image: docker.io/pvnovarese/anchore-tools:main
     steps:
       - checkout
       - run:
           name: Anchore Scan
           command: |
-            echo "Adding image to Anchore Engine"
-            anchore-cli image add --noautosubscribe --dockerfile ./Dockerfile $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest --annotation actor=${CIRCLE_PROJECT_USERNAME} --annotation build_tool=circleci
-            echo "Waiting for image analysis to complete"
-            anchore-cli image wait $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest
+            echo "Adding image to Anchore Enterprise"
+            anchorectl image add --force --no-auto-subscribe --wait --annotation build_tool=circleci --dockerfile ./Dockerfile $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest
             echo "Analysis complete"
-            if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then anchore-cli evaluate check $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest  ; fi
+            if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then anchorectl image check --detail --fail-based-on-results $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest ; else anchorectl image check --detail $DOCKER_USERNAME/$CIRCLE_PROJECT_REPONAME:circleci-latest fi
 
 workflows:
   version: 2
