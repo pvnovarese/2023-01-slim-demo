@@ -43,14 +43,14 @@ jobs:
         ### if you want to gate on policy failures, uncomment this
         echo "ANCHORE_FAIL_ON_POLICY=true" >> $GITHUB_ENV
         
-    - name: Checkout Code
+    - name: Checkout code
       uses: actions/checkout@v2
       
-    - name: Build Docker Image
+    - name: Build Docker image
       run: |
         docker build . --file Dockerfile --tag ${IMAGE_DEV}      
                 
-    - name: Install anchorectl CLI Tool
+    - name: Install anchorectl 
       run: |
         mkdir -p $HOME/.local/bin
         ### we need syft if we're going to generate sbom locally
@@ -65,7 +65,7 @@ jobs:
     #    anchorectl system wait --timeout 10
     #    anchorectl system status
         
-    - name: Generate SBOM and Push to Anchore
+    - name: Generate SBOM and push to Anchore
       run: |
         syft -o json packages ${IMAGE_DEV} | anchorectl image add --wait --no-auto-subscribe --dockerfile ./Dockerfile --annotation build_tool=github --annotation build_id=${GITHUB_SHA} ${IMAGE_DEV} --from -
         ### if you want to also keep a copy of the sbom (syft/anchore native format) locally as a build artifact, something like this:
@@ -74,14 +74,14 @@ jobs:
         # syft -o json -o spdx-json=./sbom.spdx.json -o cyclonedx-json=./sbom.cyclonedx.json packages ${IMAGE_DEV} | anchorectl image add ...
         
     ### this isn't really necessary, some people want to archive this stuff
-    - name: Pull Vulnerability List
+    - name: Pull vulnerability assessment
       run: |
-        anchorectl image vuln ${IMAGE_SHA} 
+        anchorectl image vuln ${IMAGE_DEV} 
         ### if you want to keep a copy of the vuln assessment as a build artifact:
-        # anchorectl image vuln ${IMAGE_SHA} | tee anchore-vuln.txt
+        # anchorectl image vuln ${IMAGE_DEV} | tee anchore-vuln.txt
 
 
-    - name: Pull Policy Evaluation
+    - name: Pull policy evaluation
       run: |      
         ### If ANCHORE_FAIL_ON_POLICY is set, break the pipeline if there is a policy violation
         set -o pipefail
@@ -94,13 +94,13 @@ jobs:
     
     ### policy evaluation could be used as a gate, or insert whatever other logic you want before this point,
     ### up to now, the image hasn't been pushed anywhere, now we're going to "promote" it and push to registry
-    - name: Promote Image (re-tag, login to ghcr,io, push)
+    - name: Promote image (re-tag, login to ghcr,io, push)
       run: |
         docker tag ${IMAGE_DEV} ${IMAGE}
         echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
         docker push ${IMAGE}
         
-    - name: Add Promoted Image to Anchore Queue
+    - name: Add promoted image to Anchore queue
       run: |
         anchorectl image add --force --no-auto-subscribe --dockerfile Dockerfile --annotation build_tool=github --annotation build_id=${GITHUB_SHA} ${IMAGE}
         ### if we're going to do anything with subscriptions, we should add --wait to this anchorectl command
@@ -108,12 +108,12 @@ jobs:
         
     ### optional, if you want continuous re-evaluation of policy and vulnerability,
     ### you'll need to add --wait to the last "image add" and then do
-    #- name: Activate Subscriptions
+    #- name: Activate subscriptions
     #    anchore-cli subscription activate policy_eval ${IMAGE}
     #    anchore-cli subscription activate vuln_update ${IMAGE}    
      
     ### optional, if you want to archive vuln/policy reports etc 
-    #- name: Archive Vulnerabilities and Evaluation
+    #- name: Archive vulnerabilities and evaluation artifacts
     #  if: always()
     #  uses: actions/upload-artifact@v2
     #  with:
