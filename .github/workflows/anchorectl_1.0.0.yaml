@@ -41,7 +41,7 @@ jobs:
         echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY}:gh-anchorectl-dev" >> $GITHUB_ENV
         echo "IMAGE=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY}:gh-anchorectl-${GITHUB_REF_NAME}" >> $GITHUB_ENV
         ### if you want to gate on policy failures, uncomment this
-        echo "ANCHORE_FAIL_ON_POLICY=true" >> $GITHUB_ENV
+        #echo "ANCHORE_FAIL_ON_POLICY=true" >> $GITHUB_ENV
         
     - name: Checkout code
       uses: actions/checkout@v2
