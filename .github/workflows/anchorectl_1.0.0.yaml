@@ -38,17 +38,17 @@ jobs:
     # branch name and then actually push that to the registry (the SHA tag never gets pushed)
     - name: "Set environmental variables"
       run: |
-        echo "IMAGE_SHA=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY}:gh-anchorectl-${GITHUB_SHA}" >> $GITHUB_ENV
+        echo "IMAGE_DEV=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY}:gh-anchorectl-dev" >> $GITHUB_ENV
         echo "IMAGE=${IMAGE_REGISTRY}/${GITHUB_REPOSITORY}:gh-anchorectl-${GITHUB_REF_NAME}" >> $GITHUB_ENV
         ### if you want to gate on policy failures, uncomment this
-        #echo "ANCHORE_FAIL_ON_POLICY=true"
+        echo "ANCHORE_FAIL_ON_POLICY=true" >> $GITHUB_ENV
         
     - name: Checkout Code
       uses: actions/checkout@v2
       
     - name: Build Docker Image
       run: |
-        docker build . --file Dockerfile --tag ${IMAGE_SHA}      
+        docker build . --file Dockerfile --tag ${IMAGE_DEV}      
                 
     - name: Install anchorectl CLI Tool
       run: |
@@ -67,11 +67,11 @@ jobs:
         
     - name: Generate SBOM and Push to Anchore
       run: |
-        syft -o json packages ${IMAGE_SHA} | anchorectl image add --wait --dockerfile ./Dockerfile --annotation build_tool=github ${IMAGE_SHA} --from -
+        syft -o json packages ${IMAGE_DEV} | anchorectl image add --wait --no-auto-subscribe --dockerfile ./Dockerfile --annotation build_tool=github --annotation build_id=${GITHUB_SHA} ${IMAGE_DEV} --from -
         ### if you want to also keep a copy of the sbom (syft/anchore native format) locally as a build artifact, something like this:
-        # syft -o json packages ${IMAGE_SHA} | tee ${GITHUB_REPOSITORY}-sbom.json | anchorectl image add...
+        # syft -o json packages ${IMAGE_DEV} | tee ${GITHUB_REPOSITORY}-sbom.json | anchorectl image add...
         ### advanced, generate the local sbom in spdx or cyclone dx format 
-        # syft -o json -o spdx-json=./sbom.spdx.json -o cyclonedx-json=./sbom.cyclonedx.json packages ${IMAGE_SHA} | anchorectl image add ...
+        # syft -o json -o spdx-json=./sbom.spdx.json -o cyclonedx-json=./sbom.cyclonedx.json packages ${IMAGE_DEV} | anchorectl image add ...
         
     ### this isn't really necessary, some people want to archive this stuff
     - name: Pull Vulnerability List
@@ -86,9 +86,9 @@ jobs:
         ### If ANCHORE_FAIL_ON_POLICY is set, break the pipeline if there is a policy violation
         set -o pipefail
         if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then 
-          anchorectl image check --detail --fail-based-on-results ${IMAGE_SHA} ; 
+          anchorectl image check --detail --fail-based-on-results ${IMAGE_DEV} ; 
         else 
-          anchorectl image check --detail ${IMAGE_SHA} ; 
+          anchorectl image check --detail ${IMAGE_DEV} ; 
         fi    
         ### again, if you want to keep an artifact of the policy evaluation, just pipe the image check output to "tee anchore-policy.txt" or similar
     
@@ -96,13 +96,13 @@ jobs:
     ### up to now, the image hasn't been pushed anywhere, now we're going to "promote" it and push to registry
     - name: Promote Image (re-tag, login to ghcr,io, push)
       run: |
-        docker tag ${IMAGE_SHA} ${IMAGE}
+        docker tag ${IMAGE_DEV} ${IMAGE}
         echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
         docker push ${IMAGE}
         
     - name: Add Promoted Image to Anchore Queue
       run: |
-        anchorectl image add --force --no-auto-subscribe --dockerfile Dockerfile ${IMAGE}
+        anchorectl image add --force --no-auto-subscribe --dockerfile Dockerfile --annotation build_tool=github --annotation build_id=${GITHUB_SHA} ${IMAGE}
         ### if we're going to do anything with subscriptions, we should add --wait to this anchorectl command
         ### otherwise, we can just queue it up and move on
         
