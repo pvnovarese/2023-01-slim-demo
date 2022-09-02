@@ -101,7 +101,7 @@ jobs:
         ### again, if you want to keep an artifact of the policy evaluation, just pipe the image check output to "tee anchore-policy.txt" or similar        
 
 
-    Promote-Deploy:  
+  Promote-Deploy:  
     needs: Scan-Evaluate
     runs-on: ubuntu-latest
     steps:
