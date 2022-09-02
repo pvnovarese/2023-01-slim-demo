@@ -1,6 +1,7 @@
 # 2022-07-slimline-demo 
 
-[![Anchore Weekly](https://github.com/pvnovarese/2022-07-slim-demo/actions/workflows/anchore-weekly.yaml/badge.svg)](https://github.com/pvnovarese/2022-07-slim-demo/actions/workflows/anchore-weekly.yaml)
+[![Example Enterprise Workflow](https://github.com/pvnovarese/2022-07-slim-demo/actions/workflows/example-enterprise.yaml/badge.svg)](https://github.com/pvnovarese/2022-07-slim-demo/actions/workflows/example-enterprise.yaml) 
+[![Example Local Scan/SBOM Workflow](https://github.com/pvnovarese/2022-07-slim-demo/actions/workflows/example_local.yaml/badge.svg)](https://github.com/pvnovarese/2022-07-slim-demo/actions/workflows/example_local.yaml) 
 [![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/novarese/default%2F2022-07-slim?type=cf-1&key=eyJhbGciOiJIUzI1NiJ9.NjBiNmI3NmU2OTg1ODM3ZmU2ODZiNmE5.WZIffzq3OQPvPXy6pn1TbA4z9fMsdlS1U_cliZXbxKg)]( https://g.codefresh.io/pipelines/edit/new/builds?id=62e311cbebf477595d60ad6b&pipeline=2022-07-slim&projects=default&projectId=60b6b7aa4417e4bd7d843d0f)
 [![pvnovarese](https://circleci.com/gh/pvnovarese/2022-07-slim-demo.svg?style=shield)](https://github.com/pvnovarese/2022-07-slim-demo)
 
