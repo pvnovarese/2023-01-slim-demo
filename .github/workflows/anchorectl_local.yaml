@@ -1,5 +1,8 @@
-## This workflow checks out code, builds an image, performs a 
-## container image scan, all using only anchorectl
+## This workflow is an example of scanning locally in the build
+## environment, then pushing the sbom to the Anchore Enterprise
+## API rather than pushing an image and having the Anchore
+## backend analyzers do the scanning.  Most people should use
+## one of the other workflows instead.
 ##
 ## todo list:
 ## 0) let's update these secrets (ANCHORECTL_USERNAME, ANCHORECTL_PASSWORD, ANCHORECTL_URL)
@@ -7,9 +10,8 @@
 ## 2) (possibly) use my own anchore-tools iamge instead of ubuntu plus installing anchorectl
 ## 3) add annotation to note build tool
 ## 4) break this into multiple jobs (this is difficult to do without pushing the image)
-##    
 
-name: Stable anchorectl 1.0.0
+name: Stable Local Scan/SBOM Workflow
 
 on: 
   #schedule:
@@ -54,10 +56,12 @@ jobs:
       run: |
         mkdir -p $HOME/.local/bin
         ### we need syft if we're going to generate sbom locally
-        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b $HOME/.local/bin
+        #curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b $HOME/.local/bin
         curl -sSfL  https://anchorectl-releases.anchore.io/anchorectl/install.sh  | sh -s -- -b $HOME/.local/bin
         chmod 0755 $HOME/.local/bin/anchorectl
         export PATH="$HOME/.local/bin/:$PATH"
+        ### a lot of this is unnecessary for most build environments.  usually you can just simply install
+        ### into /usr/local/bin and go, I do this just in case you're running as a non-root user
     
     ### this isn't really necessary (we'll bomb out on the next step anyway if the API isn't reachable), but is useful for debugging 
     #- name: Verify Anchore Ready and Reachable
@@ -73,7 +77,7 @@ jobs:
         ### advanced, generate the local sbom in spdx or cyclone dx format 
         # syft -o json -o spdx-json=./sbom.spdx.json -o cyclonedx-json=./sbom.cyclonedx.json packages ${IMAGE_DEV} | anchorectl image add ...
         ###
-        ### this last line is just to correct for a bug in anchorectl 1.0.0,
+        ### this last bit is just to correct for a bug in anchorectl 1.0.0,
         ### even though we use --no-auto-subscribe in the image add above, it 
         ### doesn't seem to work as expected when uploading a sbom (as opposed
         ### to just passing an image name/location to the API to be scanned
