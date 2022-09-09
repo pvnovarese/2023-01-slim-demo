@@ -34,12 +34,15 @@ pipeline {
       } // end steps
     } // end stage "checkout scm"
     
-    stage('Verify Tools') {
+    stage('Install and Verify Tools') {
       steps {
         sh """
-          which docker
-          #which anchore-cli
-          #which /var/jenkins_home/anchorectl
+          which docker 
+          ### shouldn't need anchorectl, but if you do, here's how to install it
+          #
+          #curl -sSfL  https://anchorectl-releases.anchore.io/anchorectl/install.sh  | sh -s -- -b $HOME/.local/bin
+          #chmod 0755 $HOME/.local/bin/anchorectl
+          #export PATH="$HOME/.local/bin/:$PATH"
           """
       } // end steps
     } // end stage "Verify Tools"
@@ -67,11 +70,24 @@ pipeline {
           // forceAnalyze is a good idea since we're passing a Dockerfile with the image
           anchore name: 'anchore_images', forceAnalyze: 'true', engineRetries: '900', annotations: [[key: 'build_tool', value: 'jenkins']]
         }
-        // if we want to use anchore-cli instead we can do this:
+        //   # if we want to use anchorectl instead you'll need three variables as secrets/credentials:
+        //   # ANCHORECTL_URL         e.g. http://anchore.example.com:8228/
+        //   # ANCHORECTL_USERNAME    
+        //   # ANCHORECTL_PASSWORD
+        //   #
+        //   # and then do this:
+        //
         // sh """
-        //   anchore-cli --url ${ANCHORE_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image add --force --dockerfile Dockerfile-1 --noautosubscribe ${REPOSITORY}:${TAG1}
-        //   anchore-cli --url ${ANCHORE_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} image wait ${REPOSITORY}:${TAG1}
-        //   anchore-cli --url ${ANCHORE_URL} --u ${ANCHORE_USR} --p ${ANCHORE_PSW} evaluate check ${REPOSITORY}:${TAG1}
+        //   #
+        //   ### set this to true if you want to break the pipeline on policy violations
+        //   #
+        //   export ANCHORE_FAIL_ON_POLICY='false' 
+        //   anchorectl image add --wait --no-auto-subscribe --force --dockerfile Dockerfile  ${REPOSITORY}:${TAG}
+        //   if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then 
+        //     anchorectl image check --detail --fail-based-on-results ${IMAGE_TEST} ; 
+        //   else 
+        //     anchorectl image check --detail ${IMAGE_TEST} ; 
+        //   fi    
         // """
         //
         // if you want continuous re-evaluation in the background, you can turn it on with these:
