@@ -59,7 +59,7 @@ jobs:
         mkdir -p $HOME/.local/bin
         ### we need syft if we're going to generate sbom locally
         curl -sSfL https://anchorectl-releases.anchore.io/anchorectl/install.sh | sh -s -- -b /usr/local/bin v1.2.0 \
-        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin v0.62.1 \
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin v0.61.0 \
         chmod 0755 $HOME/.local/bin/anchorectl
         export PATH="$HOME/.local/bin/:$PATH"
         ### a lot of this is unnecessary for most build environments.  usually you can just simply install
