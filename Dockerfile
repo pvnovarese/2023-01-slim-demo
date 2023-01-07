@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM docker.io/redhat/ubi8-minimal:latest
 
 LABEL maintainer="pvn@novarese.net"
 LABEL name="2023-01-slim-demo"
@@ -12,7 +12,7 @@ HEALTHCHECK --timeout=10s CMD /bin/true || exit 1
 COPY log4j-core-2.14.1.jar /
 
 RUN set -ex && \
-    apk add --no-cache curl ruby && \
+    microdnf -y install ruby && \
     gem install ftpd:0.2.1 && \
     curl -sSfL https://anchorectl-releases.anchore.io/anchorectl/install.sh | sh -s -- -b /usr/local/bin v1.3.0 
 
