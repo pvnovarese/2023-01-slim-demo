@@ -1,5 +1,5 @@
 #FROM alpine:latest
-FROM docker.io/redhat/ubi9:latest
+FROM docker.io/redhat/ubi9-minimal:latest
 
 LABEL maintainer="pvn@novarese.net"
 LABEL name="2023-01-slim-demo"
@@ -18,10 +18,10 @@ COPY log4j-core-2.14.1.jar /
 
 ### rhel-based
 RUN set -ex && \
-    dnf -y install ruby tar gzip && \
+    microdnf -y install ruby tar gzip && \
     curl -sSfL  https://anchorectl-releases.anchore.io/anchorectl/install.sh  | sh -s -- -b $HOME/.local/bin && \
     gem install ftpd:0.2.1 && \
-    dnf -y clean all && \
+    microdnf -y clean all && \
     rm -rf /var/cache/yum /tmp 
 
     
