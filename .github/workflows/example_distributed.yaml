@@ -13,8 +13,8 @@
 name: Example Local Scan/SBOM Workflow
 
 on: 
-  schedule:
-    - cron: '52 14 1 * *'
+  #schedule:
+  #  - cron: '52 14 1 * *'
   #push:
   #  branches:
   #    - main
@@ -29,8 +29,7 @@ env:
   ANCHORECTL_URL: ${{ secrets.ANCHORECTL_URL }}
   IMAGE_REGISTRY: ghcr.io
   ### if you want to gate on policy failures, set this to "true"
-  ANCHORE_FAIL_ON_POLICY: false
-
+  ANCHORECTL_FAIL_BASED_ON_RESULTS: false        
 
 
 jobs:
@@ -56,38 +55,22 @@ jobs:
                 
     - name: Install anchorectl CLI Tool
       run: |
-        mkdir -p $HOME/.local/bin
-        ### we need syft if we're going to generate sbom locally
-        curl -sSfL https://anchorectl-releases.anchore.io/anchorectl/install.sh | sh -s -- -b /usr/local/bin v1.2.0 
-        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin v0.60.3 
-        #chmod 0755 $HOME/.local/bin/anchorectl
-        #export PATH="$HOME/.local/bin/:$PATH"
-        ### a lot of this is unnecessary for most build environments.  usually you can just simply install
-        ### into /usr/local/bin and go, I do this just in case you're running as a non-root user
+        curl -sSfL https://anchorectl-releases.anchore.io/anchorectl/install.sh | sh -s -- -b /usr/local/bin v1.7.0 
+        export PATH="$HOME/.local/bin/:$PATH"
     
     ### this isn't really necessary (we'll bomb out on the next step anyway if the API isn't reachable), but is useful for debugging 
     #- name: Verify Anchore Ready and Reachable
     #  run: |
     #    anchorectl system wait --timeout 10
     #    anchorectl system status
-        
+
     - name: Generate SBOM and Push to Anchore
       run: |
-        syft -o json packages ${IMAGE_SHA} | tee ${REPOSITORY_NAME}-sbom.json | anchorectl image add --wait --dockerfile ./Dockerfile ${IMAGE_SHA} --from -
-        ### if you want to also keep a copy of the sbom (syft/anchore native format) locally as a build artifact, something like this:
-        # syft -o json packages ${IMAGE_SHA} | tee ${REPOSITORY_NAME}-sbom.json | anchorectl image add...
-        ### advanced, generate the local sbom in spdx or cyclone dx format 
-        # syft -o json -o spdx-json=./${REPOSITORY_NAME}.spdx.json -o cyclonedx-json=./${REPOSITORY_NAME}.cyclonedx.json packages ${IMAGE_SHA} | anchorectl image add ...
+        anchorectl image add --wait --no-auto-subscribe --dockerfile ./Dockerfile ${IMAGE_SHA} --from docker
+        ### advanced, generate the local sbom in spdx or cyclone dx format (as of anchorectl 1.6, youll need syft for this)
+        # syft -o json -o spdx-json=./sbom-${REPOSITORY_NAME}.spdx.json -o cyclonedx-json=./sbom-${REPOSITORY_NAME}.cyclonedx.json packages ${IMAGE_SHA} | anchorectl image add --wait --no-auto-subscribe --dockerfile ./Dockerfile ${IMAGE_SHA} --from -
         ###
-        ### this last bit is just to correct for a bug in anchorectl 1.0.0,
-        ### even though we use --no-auto-subscribe in the image add above, it 
-        ### doesn't seem to work as expected when uploading a sbom (as opposed
-        ### to just passing an image name/location to the API to be scanned
-        ### in the backend analyzer processes)
-        anchorectl subscription list | grep ${IMAGE_SHA} ### debugging
-        anchorectl subscription deactivate ${IMAGE_SHA} tag_update
-        anchorectl subscription list | grep ${IMAGE_SHA} ### debugging
-        
+                
     ### this isn't really necessary, some people want to archive this stuff
     #- name: Pull Vulnerability List
     #  run: |
@@ -97,20 +80,12 @@ jobs:
 
     - name: Check Policy Evaluation
       run: |      
-        ### If ANCHORE_FAIL_ON_POLICY is set, break the pipeline if there is a policy violation
-        set -o pipefail
-        if [ "$ANCHORE_FAIL_ON_POLICY" == "true" ] ; then 
-          anchorectl image check --detail --fail-based-on-results ${IMAGE_SHA} ; 
-        else 
-          anchorectl image check --detail ${IMAGE_SHA} ; 
-        fi    
-        ### if you want to archive a copy of the policy evaluation, you 
-        ### do something like pipe the output of these anchorectl commands
-        ### to anchore-policy.txt or similar.
-    
-    ### policy evaluation could be used as a gate, or insert whatever other logic you want before this point,
-    ### up to now, the image hasn't been pushed anywhere, now we're going to "promote" it and push to registry
-    
+        ### If ANCHORECTL_FAIL_BASED_ON_RESULTS is true (defined up above), 
+        ### anchorectl will break the pipeline if there is a policy violation
+        ### or you can just use the -f or --fail-based-on-results options
+        #
+        anchorectl image check --detail  ${IMAGE_SHA} 
+        
     - name: Re-Tag Image
       run: |
         docker tag ${IMAGE_SHA} ${IMAGE}
@@ -127,7 +102,11 @@ jobs:
         anchorectl image add --force --no-auto-subscribe --dockerfile Dockerfile ${IMAGE}
         ### if we're going to do anything with subscriptions, we should add --wait to this anchorectl command
         ### otherwise, we can just queue it up and move on
-        
+
+#####
+##### stuff below here is outdated and needs to be rewritten
+##### 
+
     ### if you want to clean up, you need anchore-cli for now since subscription operations are 
     ### also not implemented in anchorectl yet as of v0.2.0
     #- name: Purge Unneeded Evaluation
