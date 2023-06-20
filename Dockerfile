@@ -1,5 +1,5 @@
 #FROM alpine:latest
-FROM docker.io/redhat/ubi8-minimal:latest
+FROM docker.io/redhat/ubi8:latest
 
 LABEL maintainer="pvn@novarese.net"
 LABEL name="2023-01-slim-demo"
