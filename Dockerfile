@@ -22,7 +22,6 @@ RUN set -ex && \
     curl -sSfL  https://anchorectl-releases.anchore.io/anchorectl/install.sh  | sh -s -- -b $HOME/.local/bin && \
     gem install ftpd:0.2.1 && \
     dnf -y clean all && \
-    echo "trigger package verification for gzip" >> /usr/share/doc/gzip/TODO && \
     rm -rf /var/cache/yum /tmp 
 
     
