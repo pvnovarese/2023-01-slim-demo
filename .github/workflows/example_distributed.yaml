@@ -10,7 +10,7 @@
 ## 2) break this into multiple jobs (need to figure out how to build an image in one job
 ##    and use it in a 2nd job without pushing it anywhere
 
-name: Example Local Scan/SBOM Workflow
+name: Example Distributed Scan
 
 on: 
   #schedule:
